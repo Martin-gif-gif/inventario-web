@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Inventario</title>
+</head>
+<body>
+
+<h1>Sistema</h1>
+
+<button onclick="mostrarInventario()">Inventario</button>
+<button onclick="mostrarEventos()">Eventos</button>
+
+<!-- INVENTARIO -->
+<div id="inventario">
+  <h2>Agregar producto</h2>
+
+  <input id="nombre" placeholder="Producto">
+  <input id="cantidad" type="number" placeholder="Disponible">
+  <input id="danado" type="number" placeholder="Dañado">
+  <button onclick="agregar()">Agregar</button>
+
+  <ul id="lista"></ul>
+</div>
+
+<!-- EVENTOS -->
+<div id="eventos" style="display:none;">
+  <h2>Crear evento</h2>
+
+  <input id="nombreEvento" placeholder="Nombre del evento">
+
+  <h3>Productos</h3>
+  <div id="productosEvento"></div>
+
+  <button onclick="guardarEvento()">Guardar evento</button>
+
+  <h3>Eventos guardados</h3>
+  <ul id="listaEventos"></ul>
+</div>
+
+<script>
+async function eliminarEvento(id){
+  await fetch("/eventos/"+id,{method:"DELETE"});
+  cargarEventos();
+}
+// CAMBIO DE VISTA
+function mostrarInventario(){
+  document.getElementById("inventario").style.display = "block";
+  document.getElementById("eventos").style.display = "none";
+}
+
+function mostrarEventos(){
+  document.getElementById("inventario").style.display = "none";
+  document.getElementById("eventos").style.display = "block";
+  cargarProductosEvento();
+  cargarEventos();
+}
+
+// INVENTARIO
+async function cargar(){
+  let res = await fetch("/productos");
+  let data = await res.json();
+
+  let lista = document.getElementById("lista");
+  lista.innerHTML = "";
+
+  data.forEach((p,i)=>{
+    lista.innerHTML += `
+      <li>
+      ${p.nombre} | ${p.cantidad} disp | ${p.danado} dañ
+      <button onclick="eliminar(${i})">X</button>
+      </li>`;
+  });
+}
+
+async function agregar(){
+  let nombre = document.getElementById("nombre").value;
+  let cantidad = document.getElementById("cantidad").value;
+  let danado = document.getElementById("danado").value;
+
+  await fetch("/productos",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      nombre,
+      cantidad: Number(cantidad)||0,
+      danado: Number(danado)||0
+    })
+  });
+
+  cargar();
+}
+
+async function eliminar(id){
+  await fetch("/productos/"+id,{method:"DELETE"});
+  cargar();
+}
+
+// EVENTOS
+async function cargarProductosEvento(){
+  let res = await fetch("/productos");
+  let data = await res.json();
+
+  let cont = document.getElementById("productosEvento");
+  cont.innerHTML = "";
+
+  data.forEach((p,i)=>{
+    cont.innerHTML += `
+      <div>
+        <label>
+          <input type="checkbox" class="check">
+          ${p.nombre}
+        </label>
+        Cantidad:
+        <input type="number" class="cant" value="0">
+      </div>
+    `;
+  });
+}
+
+async function guardarEvento(){
+  let nombreEvento = document.getElementById("nombreEvento").value;
+
+  let checks = document.querySelectorAll(".check");
+  let cants = document.querySelectorAll(".cant");
+
+  let productos = [];
+
+  checks.forEach((c,i)=>{
+    if(c.checked){
+      productos.push({
+        nombre: c.parentElement.innerText.trim(),
+        cantidad: Number(cants[i].value)||0
+      });
+    }
+  });
+
+  await fetch("/eventos",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      nombre: nombreEvento,
+      productos
+    })
+  });
+
+  cargarEventos();
+  cargar();
+}
+
+async function cargarEventos(){
+  let res = await fetch("/eventos");
+  let data = await res.json();
+
+  let lista = document.getElementById("listaEventos");
+  lista.innerHTML = "";
+
+ data.forEach((e,i)=>{
+    lista.innerHTML += `
+     <li>
+<strong>${e.nombre}</strong><br>
+${e.productos.map(p=>p.nombre+" ("+p.cantidad+")").join(", ")}
+<br>
+<button onclick="eliminarEvento(${i})">❌ Eliminar</button>
+</li><hr>
+    `;
+  });
+}
+
+cargar();
+
+</script>
+
+</body>
+</html>
