@@ -1,105 +1,90 @@
 const express = require("express");
-const fs = require("fs");
+const mongoose = require("mongoose");
+const cors = require("cors");
+
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 app.use(express.static("public"));
 
-const ARCHIVO = "inventario.json";
+// 🔥 CONEXIÓN
+mongoose.connect("mongodb://martinbalitan_db_user:20Mm25122@ac-isjd52x-shard-00-00.qy6rkfp.mongodb.net:27017,ac-isjd52x-shard-00-01.qy6rkfp.mongodb.net:27017,ac-isjd52x-shard-00-02.qy6rkfp.mongodb.net:27017/?ssl=true&replicaSet=atlas-3is3xe-shard-0&authSource=admin&appName=Cluster0")
+  .then(() => console.log("Mongo conectado"))
+  .catch(err => console.log(err));
 
-// -------- INVENTARIO --------
-function leerDatos() {
-  try {
-    return JSON.parse(fs.readFileSync(ARCHIVO, "utf8"));
-  } catch {
-    return [];
-  }
-}
+// =====================
+// MODELOS
+// =====================
+const Producto = mongoose.model("Producto", new mongoose.Schema({
+  nombre: String,
+  cantidad: Number,
+  danado: Number,
+  tipo: String
+}));
 
-function guardarDatos(data) {
-  fs.writeFileSync(ARCHIVO, JSON.stringify(data, null, 2));
-}
-
-app.get("/productos", (req, res) => {
-  res.json(leerDatos());
-});
-
-app.post("/productos", (req, res) => {
-  let inventario = leerDatos();
-  const { nombre, cantidad, danado } = req.body;
-
-  inventario.push({
-    nombre,
-    cantidad: Number(cantidad) || 0,
-    danado: Number(danado) || 0
-  });
-
-  guardarDatos(inventario);
-  res.json({ ok: true });
-});
-
-app.delete("/productos/:id", (req, res) => {
-  let inventario = leerDatos();
-  inventario.splice(req.params.id, 1);
-  guardarDatos(inventario);
-  res.json({ ok: true });
-});
-
-// -------- EVENTOS --------
-app.get("/eventos", (req, res) => {
-  try {
-    res.json(JSON.parse(fs.readFileSync("eventos.json", "utf8")));
-  } catch {
-    res.json([]);
-  }
-});
-
-app.post("/eventos", (req, res) => {
-  let eventos = [];
-  let inventario = leerDatos();
-
-  try {
-    eventos = JSON.parse(fs.readFileSync("eventos.json", "utf8"));
-  } catch {}
-
-  const nuevoEvento = req.body;
-
-  // Restar inventario
-  nuevoEvento.productos.forEach(p => {
-    let item = inventario.find(i => i.nombre === p.nombre);
-
-    if (item) {
-      if (item.cantidad >= p.cantidad) {
-        item.cantidad -= p.cantidad;
-      } else {
-        item.cantidad = 0;
-      }
+const Evento = mongoose.model("Evento", new mongoose.Schema({
+  nombre: String,
+  productos: [
+    {
+      nombre: String,
+      tipo: String,
+      cantidad: Number
     }
-  });
+  ]
+}));
 
-  eventos.push(nuevoEvento);
- // Eliminar evento
-app.delete("/eventos/:id", (req, res) => {
-  let eventos = [];
+// =====================
+// PRODUCTOS
+// =====================
+app.post("/productos", async (req, res) => {
+  const nuevo = new Producto(req.body);
+  await nuevo.save();
+  res.json({ ok: true });
+});
 
+app.get("/productos/:tipo", async (req, res) => {
+  const data = await Producto.find({ tipo: req.params.tipo });
+  res.json(data);
+});
+
+app.delete("/productos/:id", async (req, res) => {
   try {
-    eventos = JSON.parse(fs.readFileSync("eventos.json", "utf8"));
-  } catch {}
-
-  eventos.splice(req.params.id, 1);
-
-  fs.writeFileSync("eventos.json", JSON.stringify(eventos, null, 2));
-
-  res.json({ ok: true });
-});
-  guardarDatos(inventario);
-  fs.writeFileSync("eventos.json", JSON.stringify(eventos, null, 2));
-
-  res.json({ ok: true });
+    await Producto.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// =====================
+// EVENTOS
+// =====================
+app.post("/eventos", async (req, res) => {
+  const nuevo = new Evento(req.body);
+  await nuevo.save();
+  res.json({ ok: true });
+});
+
+app.get("/eventos", async (req, res) => {
+  const data = await Evento.find();
+  res.json(data);
+});
+
+app.delete("/eventos/:id", async (req, res) => {
+  try {
+    await Evento.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// =====================
+// SERVER
+// =====================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("Servidor corriendo");
+  console.log("Servidor corriendo en puerto " + PORT);
 });

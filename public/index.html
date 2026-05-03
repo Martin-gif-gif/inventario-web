@@ -1,81 +1,207 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Inventario</title>
+<title>Sistema de control de inventario bodega MEMO</title>
+
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  background: #f4f6f9;
+}
+
+/* HEADER */
+.header {
+  background: #1e293b;
+  color: white;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.logo {
+  width: 120px;
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  background: white;
+  padding: 10px;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.tab {
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #e2e8f0;
+}
+
+.tab.active {
+  background: #3b82f6;
+  color: white;
+}
+
+/* SECCIONES */
+.seccion {
+  display: none;
+  padding: 20px;
+}
+.seccion.active {
+  display: block;
+}
+
+/* CARD */
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 500px;
+  margin: auto;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* INPUT */
+input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+/* BUTTON */
+button {
+  width: 100%;
+  padding: 10px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* LISTA */
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  background: #f1f5f9;
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+/* EVENTOS ITEMS */
+.item-check {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 8px;
+  border-radius: 6px;
+  margin: 5px 0;
+}
+
+.item-check input[type="number"] {
+  width: 60px;
+}
+
+</style>
 </head>
+
 <body>
 
-<h1>Sistema</h1>
+<div class="header">
+  <h2>Sistema de inventario MEMO</h2>
+  <img src="logo.png" class="logo">
+</div>
 
-<button onclick="mostrarInventario()">Inventario</button>
-<button onclick="mostrarEventos()">Eventos</button>
+<div class="tabs">
+  <div class="tab active" onclick="cambiar('luces')">Luces</div>
+  <div class="tab" onclick="cambiar('pantallas')">Pantallas</div>
+  <div class="tab" onclick="cambiar('sonido')">Sonido</div>
+  <div class="tab" onclick="cambiar('eventos')">Eventos</div>
+</div>
 
-<!-- INVENTARIO -->
-<div id="inventario">
-  <h2>Agregar producto</h2>
+<!-- LUCES -->
+<div id="luces" class="seccion active">
+  <div class="card">
+    <h3>💡 Luces</h3>
+    <input id="nombreLuces" placeholder="Producto">
+    <input id="cantidadLuces" type="number" placeholder="Disponibles">
+    <input id="danadoLuces" type="number" placeholder="Dañado">
+    <button onclick="agregar('luces')">Agregar</button>
+    <ul id="listaLuces"></ul>
+  </div>
+</div>
 
-  <input id="nombre" placeholder="Producto">
-  <input id="cantidad" type="number" placeholder="Disponible">
-  <input id="danado" type="number" placeholder="Dañado">
-  <button onclick="agregar()">Agregar</button>
+<!-- PANTALLAS -->
+<div id="pantallas" class="seccion">
+  <div class="card">
+    <h3>📺 Pantallas</h3>
+    <input id="nombrePantallas" placeholder="Producto">
+    <input id="cantidadPantallas" type="number" placeholder="Disponibles">
+    <input id="danadoPantallas" type="number" placeholder="Dañado">
+    <button onclick="agregar('pantallas')">Agregar</button>
+    <ul id="listaPantallas"></ul>
+  </div>
+</div>
 
-  <ul id="lista"></ul>
+<!-- SONIDO -->
+<div id="sonido" class="seccion">
+  <div class="card">
+    <h3>🔊 Sonido</h3>
+    <input id="nombreSonido" placeholder="Producto">
+    <input id="cantidadSonido" type="number" placeholder="Disponibles">
+    <input id="danadoSonido" type="number" placeholder="Dañado">
+    <button onclick="agregar('sonido')">Agregar</button>
+    <ul id="listaSonido"></ul>
+  </div>
 </div>
 
 <!-- EVENTOS -->
-<div id="eventos" style="display:none;">
-  <h2>Crear evento</h2>
+<div id="eventos" class="seccion">
+  <div class="card">
+    <h3>📅 Eventos</h3>
 
-  <input id="nombreEvento" placeholder="Nombre del evento">
+    <input id="nombreEvento" placeholder="Nombre del evento">
+    <div id="productosEvento"></div>
 
-  <h3>Productos</h3>
-  <div id="productosEvento"></div>
+    <button onclick="guardarEvento()">Guardar evento</button>
 
-  <button onclick="guardarEvento()">Guardar evento</button>
-
-  <h3>Eventos guardados</h3>
-  <ul id="listaEventos"></ul>
+    <ul id="listaEventos"></ul>
+  </div>
 </div>
 
 <script>
-async function eliminarEvento(id){
-  await fetch("/eventos/"+id,{method:"DELETE"});
-  cargarEventos();
-}
-// CAMBIO DE VISTA
-function mostrarInventario(){
-  document.getElementById("inventario").style.display = "block";
-  document.getElementById("eventos").style.display = "none";
-}
 
-function mostrarEventos(){
-  document.getElementById("inventario").style.display = "none";
-  document.getElementById("eventos").style.display = "block";
-  cargarProductosEvento();
-  cargarEventos();
+// CAMBIAR TAB
+function cambiar(id){
+  document.querySelectorAll(".seccion").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  event.target.classList.add("active");
+
+  if(id==="eventos"){
+    cargarProductosEvento();
+    cargarEventos();
+  }
 }
 
-// INVENTARIO
-async function cargar(){
-  let res = await fetch("/productos");
-  let data = await res.json();
-
-  let lista = document.getElementById("lista");
-  lista.innerHTML = "";
-
-  data.forEach((p,i)=>{
-    lista.innerHTML += `
-      <li>
-      ${p.nombre} | ${p.cantidad} disp | ${p.danado} dañ
-      <button onclick="eliminar(${i})">X</button>
-      </li>`;
-  });
-}
-
-async function agregar(){
-  let nombre = document.getElementById("nombre").value;
-  let cantidad = document.getElementById("cantidad").value;
-  let danado = document.getElementById("danado").value;
+// AGREGAR
+async function agregar(tipo){
+  let nombre = document.getElementById("nombre"+cap(tipo)).value;
+  let cantidad = document.getElementById("cantidad"+cap(tipo)).value;
+  let danado = document.getElementById("danado"+cap(tipo)).value;
 
   await fetch("/productos",{
     method:"POST",
@@ -83,53 +209,84 @@ async function agregar(){
     body: JSON.stringify({
       nombre,
       cantidad: Number(cantidad)||0,
-      danado: Number(danado)||0
+      danado: Number(danado)||0,
+      tipo
     })
   });
 
-  cargar();
+  cargar(tipo);
 }
 
-async function eliminar(id){
-  await fetch("/productos/"+id,{method:"DELETE"});
-  cargar();
-}
-
-// EVENTOS
-async function cargarProductosEvento(){
-  let res = await fetch("/productos");
+// CARGAR PRODUCTOS
+async function cargar(tipo){
+  let res = await fetch("/productos/"+tipo);
   let data = await res.json();
 
-  let cont = document.getElementById("productosEvento");
-  cont.innerHTML = "";
+  let lista = document.getElementById("lista"+cap(tipo));
+  lista.innerHTML = "";
 
-  data.forEach((p,i)=>{
-    cont.innerHTML += `
-      <div>
-        <label>
-          <input type="checkbox" class="check">
-          ${p.nombre}
-        </label>
-        Cantidad:
-        <input type="number" class="cant" value="0">
-      </div>
+  data.forEach(p=>{
+    let total = p.cantidad + p.danado;
+
+    lista.innerHTML += `
+      <li>
+        <b>${p.nombre}</b><br>
+        Disponibles: ${p.cantidad} |
+        Dañados: ${p.danado} |
+        <b>Total: ${total}</b>
+        <br>
+        <button onclick="eliminarProducto('${p._id}','${tipo}')">Eliminar</button>
+      </li>
     `;
   });
 }
 
-async function guardarEvento(){
-  let nombreEvento = document.getElementById("nombreEvento").value;
+// ELIMINAR PRODUCTO
+async function eliminarProducto(id,tipo){
+  await fetch("/productos/"+id,{ method:"DELETE" });
+  cargar(tipo);
+}
 
-  let checks = document.querySelectorAll(".check");
-  let cants = document.querySelectorAll(".cant");
+// EVENTOS - CARGAR PRODUCTOS
+async function cargarProductosEvento(){
+  let tipos = ["luces","pantallas","sonido"];
+  let cont = document.getElementById("productosEvento");
+  cont.innerHTML = "";
+
+  for(let t of tipos){
+    let res = await fetch("/productos/"+t);
+    let data = await res.json();
+
+    cont.innerHTML += `<b>${t}</b>`;
+
+    data.forEach(p=>{
+      cont.innerHTML += `
+        <div class="item-check">
+          <label>
+            <input type="checkbox" class="check-prod" data-nombre="${p.nombre}" data-tipo="${t}">
+            ${p.nombre}
+          </label>
+          <input type="number" value="1" min="1" class="cantidad-prod">
+        </div>
+      `;
+    });
+  }
+}
+
+// GUARDAR EVENTO
+async function guardarEvento(){
+  let nombre = document.getElementById("nombreEvento").value;
+  let checks = document.querySelectorAll(".check-prod");
+  let cantidades = document.querySelectorAll(".cantidad-prod");
 
   let productos = [];
 
   checks.forEach((c,i)=>{
     if(c.checked){
       productos.push({
-        nombre: c.parentElement.innerText.trim(),
-        cantidad: Number(cants[i].value)||0
+        nombre: c.dataset.nombre,
+        tipo: c.dataset.tipo,
+        cantidad: Number(cantidades[i].value)
       });
     }
   });
@@ -137,16 +294,13 @@ async function guardarEvento(){
   await fetch("/eventos",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({
-      nombre: nombreEvento,
-      productos
-    })
+    body: JSON.stringify({nombre,productos})
   });
 
   cargarEventos();
-  cargar();
 }
 
+// CARGAR EVENTOS
 async function cargarEventos(){
   let res = await fetch("/eventos");
   let data = await res.json();
@@ -154,19 +308,42 @@ async function cargarEventos(){
   let lista = document.getElementById("listaEventos");
   lista.innerHTML = "";
 
- data.forEach((e,i)=>{
+  data.forEach(e=>{
+    let luces = e.productos.filter(p=>p.tipo==="luces");
+    let pantallas = e.productos.filter(p=>p.tipo==="pantallas");
+    let sonido = e.productos.filter(p=>p.tipo==="sonido");
+
     lista.innerHTML += `
-     <li>
-<strong>${e.nombre}</strong><br>
-${e.productos.map(p=>p.nombre+" ("+p.cantidad+")").join(", ")}
-<br>
-<button onclick="eliminarEvento(${i})">❌ Eliminar</button>
-</li><hr>
+      <li>
+        <b>${e.nombre}</b><br><br>
+
+        ${luces.length ? "<b>Luces:</b><br>" + luces.map(p=>`- ${p.nombre} (${p.cantidad})`).join("<br>") + "<br><br>" : ""}
+
+        ${pantallas.length ? "<b>Pantallas:</b><br>" + pantallas.map(p=>`- ${p.nombre} (${p.cantidad})`).join("<br>") + "<br><br>" : ""}
+
+        ${sonido.length ? "<b>Sonido:</b><br>" + sonido.map(p=>`- ${p.nombre} (${p.cantidad})`).join("<br>") + "<br><br>" : ""}
+
+        <button onclick="eliminarEvento('${e._id}')">Eliminar</button>
+      </li>
     `;
   });
 }
 
-cargar();
+// ELIMINAR EVENTO
+async function eliminarEvento(id){
+  await fetch("/eventos/"+id,{ method:"DELETE" });
+  cargarEventos();
+}
+
+// UTIL
+function cap(t){
+  return t.charAt(0).toUpperCase()+t.slice(1);
+}
+
+// INIT
+cargar("luces");
+cargar("pantallas");
+cargar("sonido");
 
 </script>
 
